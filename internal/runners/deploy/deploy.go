@@ -30,10 +30,11 @@ import (
 )
 
 type Params struct {
-	Namespace project.Namespaced
-	Path      string
-	Force     bool
-	UserScope bool
+	Namespace   project.Namespaced
+	Path        string
+	Force       bool
+	UserScope   bool
+	NoExecutors bool
 }
 
 // RequiresAdministratorRights checks if the requested deploy command requires administrator privileges.
@@ -84,17 +85,22 @@ func (d *Deploy) Run(params *Params) error {
 
 	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path) /* TODO: handle empty path */
 
+	useExecutors := true
+	if params.NoExecutors {
+		useExecutors = false
+	}
+
 	logging.Debug("runSteps: %s", d.step.String())
 
 	if d.step == UnsetStep || d.step == InstallStep {
 		logging.Debug("Running install step")
-		if err := d.install(params.Namespace, rtTarget); err != nil {
+		if err := d.install(params.Namespace, rtTarget, useExecutors); err != nil {
 			return err
 		}
 	}
 	if d.step == UnsetStep || d.step == ConfigureStep {
 		logging.Debug("Running configure step")
-		if err := d.configure(rtTarget, params.UserScope); err != nil {
+		if err := d.configure(rtTarget, params.UserScope, useExecutors); err != nil {
 			return err
 		}
 	}
@@ -138,7 +144,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 	return *commitID, nil
 }
 
-func (d *Deploy) install(namespace project.Namespaced, rtTarget setup.Targeter) error {
+func (d *Deploy) install(namespace project.Namespaced, rtTarget setup.Targeter, useExecutors bool) error {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
 	rti, err := runtime.New(rtTarget)
@@ -163,7 +169,7 @@ func (d *Deploy) install(namespace project.Namespaced, rtTarget setup.Targeter) 
 		}
 	}
 
-	env, err := rti.Env(false, true)
+	env, err := rti.Env(false, useExecutors)
 	if err != nil {
 		return err
 	}
@@ -184,7 +190,7 @@ func (d *Deploy) install(namespace project.Namespaced, rtTarget setup.Targeter) 
 	return nil
 }
 
-func (d *Deploy) configure(rtTarget setup.Targeter, userScope bool) error {
+func (d *Deploy) configure(rtTarget setup.Targeter, userScope bool, useExecutors bool) error {
 	rti, err := runtime.New(rtTarget)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
@@ -193,7 +199,7 @@ func (d *Deploy) configure(rtTarget setup.Targeter, userScope bool) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	env, err := rti.Env(false, true)
+	env, err := rti.Env(false, useExecutors)
 	if err != nil {
 		return err
 	}

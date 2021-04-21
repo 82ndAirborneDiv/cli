@@ -25,6 +25,11 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 			Description: locale.T("flag_state_deploy_force_description"),
 			Value:       &params.Force,
 		},
+		{
+			Name:        "no-executors",
+			Description: locale.T("flag_state_deploy_no_executors_description"),
+			Value:       &params.NoExecutors,
+		},
 	}
 	if runtime.GOOS == "windows" {
 		flags = append(flags, &captain.Flag{
@@ -71,6 +76,11 @@ func newDeployInstallCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("flag_state_deploy_path_description"),
 				Value:       &params.Path,
 			},
+			{
+				Name:        "no-executors",
+				Description: locale.T("flag_state_deploy_no_executors_description"),
+				Value:       &params.NoExecutors,
+			},
 		},
 		[]*captain.Argument{
 			{
@@ -95,6 +105,11 @@ func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
 			Name:        "path",
 			Description: locale.T("flag_state_deploy_path_description"),
 			Value:       &params.Path,
+		},
+		{
+			Name:        "no-executors",
+			Description: locale.T("flag_state_deploy_no_executors_description"),
+			Value:       &params.NoExecutors,
 		},
 	}
 	if runtime.GOOS == "windows" {
